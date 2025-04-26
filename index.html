@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+  <meta charset="UTF-8">
+  <title>PetShop - Webshop za ljubimce</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-blue-50 min-h-screen flex flex-col">
+  <header class="bg-white shadow p-4 flex justify-between items-center">
+    <h1 class="text-2xl font-bold">🐾 PetShop</h1>
+    <div id="cartCounter" class="text-lg">🛒 Košarica (0)</div>
+  </header>
+
+  <main class="flex-grow container mx-auto p-6">
+
+    <!-- Odabir kategorije i filtriranje -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <div>
+        <label class="font-medium">Odaberi kategoriju:</label>
+        <select id="kategorija" onchange="prikaziProizvode()" class="w-full p-2 border rounded">
+          <option value="sve">🌟 Sve</option>
+          <option value="psi">🐶 Psi</option>
+          <option value="macke">🐱 Mačke</option>
+        </select>
+      </div>
+      <div>
+        <label class="font-medium">Filtriraj maksimalnu cijenu (€):</label>
+        <input type="number" id="maxCijena" placeholder="Npr. 10" class="w-full p-2 border rounded" oninput="prikaziProizvode()">
+      </div>
+    </div>
+
+    <!-- Proizvodi -->
+    <div id="proizvodi" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+
+    <button onclick="dodajUKosaricu()" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Dodaj u košaricu</button>
+
+    <!-- Košarica -->
+    <h2 class="text-2xl font-semibold mt-10 mb-4">🛒 Košarica</h2>
+    <div id="cart" class="space-y-2"></div>
+    <h3 id="total" class="text-xl font-bold mt-4">Ukupno: 0.00 €</h3>
+
+    <!-- Odabir plaćanja -->
+    <h2 class="text-2xl font-semibold mt-10 mb-4">💳 Način plaćanja</h2>
+    <select id="paymentMethod" class="w-full p-2 border rounded mb-4">
+      <option value="pouzece">Plaćanje pouzećem</option>
+      <option value="uplata">Uplata na račun</option>
+    </select>
+
+    <!-- E-mail -->
+    <input type="email" id="email" placeholder="Vaš email" class="w-full p-2 border rounded mb-4" required>
+    
+    <button onclick="posaljiNarudzbu()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 w-full">📧 Pošalji narudžbu</button>
+
+    <div id="loader" class="hidden text-center mt-4">Slanje narudžbe...</div>
+    <p id="status" class="mt-4 text-green-700 font-medium"></p>
+
+  </main>
+
+  <footer class="bg-gradient-to-r from-blue-500 to-blue-300 text-white p-6 mt-12 animate-fade-in">
+    <div class="flex justify-between items-center flex-col md:flex-row">
+      <p>© 2025 PetShop | Sva prava pridržana</p>
+      <div class="flex space-x-4 mt-4 md:mt-0">
+        <a href="#" class="hover:text-gray-200">📘 Facebook</a>
+        <a href="#" class="hover:text-gray-200">📸 Instagram</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const proizvodiPoKategoriji = {
+      psi: [
+        { id: 'hrana_psi', naziv: 'Hrana za pse', cijena: 6.64, slika: 'images/hrana_psi.png', zaliha: 10 },
+        { id: 'igracka_psi', naziv: 'Igračka za pse', cijena: 3.98, slika: 'images/igracka_psi.png', zaliha: 5 },
+        { id: 'krevetic_psi', naziv: 'Krevetić za pse', cijena: 15.93, slika: 'images/krevetic_psi.png', zaliha: 3 }
+      ],
+      macke: [
+        { id: 'hrana_macke', naziv: 'Hrana za mačke', cijena: 5.49, slika: 'images/hrana_macke.png', zaliha: 8 },
+        { id: 'igracka_macke', naziv: 'Igračka za mačke', cijena: 2.75, slika: 'images/igracka_macke.png', zaliha: 6 },
+        { id: 'krevetic_macke', naziv: 'Krevetić za mačke', cijena: 14.20, slika: 'images/krevetic_macke.png', zaliha: 2 }
+      ]
+    };
+
+    const kosarica = [];
+
+    function prikaziProizvode() {
+      const kategorija = document.getElementById('kategorija').value;
+      const maxCijena = parseFloat(document.getElementById('maxCijena').value);
+      const proizvodiDiv = document.getElementById('proizvodi');
+      proizvodiDiv.innerHTML = '';
+
+      let sviProizvodi = (kategorija === 'sve')
+        ? [...proizvodiPoKategoriji.psi, ...proizvodiPoKategoriji.macke]
+        : proizvodiPoKategoriji[kategorija];
+
+      sviProizvodi.forEach(proizvod => {
+        if (!isNaN(maxCijena) && proizvod.cijena > maxCijena) return;
+
+        const div = document.createElement('div');
+        div.className = 'flex items-center bg-white p-4 rounded shadow-md hover:bg-blue-100 hover:shadow-lg transition';
+
+        div.innerHTML = `
+          <img src="${proizvod.slika}" alt="${proizvod.naziv}" class="w-20 h-20 rounded-full mr-4">
+          <div class="flex-1">
+            <p class="font-semibold">${proizvod.naziv}</p>
+            <p>${proizvod.cijena.toFixed(2)} €</p>
+            <p class="text-sm text-gray-500">Na skladištu: ${proizvod.zaliha}</p>
+          </div>
+          <input type="number" id="${proizvod.id}" min="0" max="${proizvod.zaliha}" value="0" class="w-16 border rounded p-1">
+        `;
+
+        proizvodiDiv.appendChild(div);
+      });
+    }
+
+    function dodajUKosaricu() {
+      const kategorija = document.getElementById('kategorija').value;
+      let proizvodi = (kategorija === 'sve') ? [...proizvodiPoKategoriji.psi, ...proizvodiPoKategoriji.macke] : proizvodiPoKategoriji[kategorija];
+
+      proizvodi.forEach(proizvod => {
+        const input = document.getElementById(proizvod.id);
+        const qty = parseInt(input.value);
+        if (qty > 0 && qty <= proizvod.zaliha) {
+          kosarica.push({ naziv: proizvod.naziv, cijena: proizvod.cijena, kolicina: qty });
+          input.value = 0;
+        }
+      });
+      prikaziKosaricu();
+    }
+
+    function prikaziKosaricu() {
+      const cartDiv = document.getElementById('cart');
+      cartDiv.innerHTML = '';
+      let ukupno = 0;
+      let ukupnoArtikala = 0;
+
+      kosarica.forEach((item, index) => {
+        const suma = item.cijena * item.kolicina;
+        ukupno += suma;
+        ukupnoArtikala += item.kolicina;
+
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'bg-white p-3 rounded shadow flex justify-between items-center';
+
+        const info = document.createElement('span');
+        info.textContent = `${item.naziv} - ${item.kolicina} x ${item.cijena.toFixed(2)} € = ${suma.toFixed(2)} €`;
+
+        const btn = document.createElement('button');
+        btn.textContent = '🗑️';
+        btn.className = 'bg-red-500 text-white rounded px-2 py-1 hover:bg-red-600';
+        btn.onclick = () => {
+          kosarica.splice(index, 1);
+          prikaziKosaricu();
+        };
+
+        itemDiv.appendChild(info);
+        itemDiv.appendChild(btn);
+        cartDiv.appendChild(itemDiv);
+      });
+
+      document.getElementById('total').innerText = `Ukupno: ${ukupno.toFixed(2)} €`;
+      document.getElementById('cartCounter').innerText = `🛒 Košarica (${ukupnoArtikala})`;
+    }
+
+    function posaljiNarudzbu() {
+      const email = document.getElementById('email').value.trim();
+      if (!email || kosarica.length === 0) {
+        document.getElementById('status').innerText = 'Unesite email i dodajte proizvode u košaricu.';
+        return;
+      }
+
+      document.getElementById('loader').classList.remove('hidden');
+
+      setTimeout(() => {
+        const nacin = document.getElementById('paymentMethod').value;
+        let tekst = `Poštovani,\n\nNarudžba:\n`;
+        let ukupno = 0;
+
+        kosarica.forEach(item => {
+          const suma = item.cijena * item.kolicina;
+          ukupno += suma;
+          tekst += `- ${item.naziv}: ${item.kolicina} x ${item.cijena.toFixed(2)} € = ${suma.toFixed(2)} €\n`;
+        });
+
+        tekst += `\nUkupno: ${ukupno.toFixed(2)} €\n\n`;
+        tekst += (nacin === 'uplata') ? 'Molimo uplatite na IBAN: HR1234567890000001234' : 'Plaćanje pouzećem kod preuzimanja.';
+
+        const mailtoLink = `mailto:${email}?subject=PetShop Narudžba&body=${encodeURIComponent(tekst)}`;
+        window.location.href = mailtoLink;
+
+        document.getElementById('loader').classList.add('hidden');
+        document.getElementById('status').innerText = 'Otvoren je e-mail klijent za slanje narudžbe.';
+      }, 1000);
+    }
+
+    window.onload = prikaziProizvode;
+  </script>
+</body>
+</html>
+
